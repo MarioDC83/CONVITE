@@ -1,0 +1,68 @@
+# Producción / demo en un servidor. Uso:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# A diferencia de docker-compose.yml (desarrollo): sin bind mounts ni --reload,
+# frontend compilado (no el servidor de Vite), Postgres y backend NO expuestos
+# a internet (solo Caddy publica 80/443) y sin Adminer.
+name: convite
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Falta POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Falta POSTGRES_DB en .env}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY:?Falta SECRET_KEY en .env}
+      BACKEND_PUBLIC_URL: https://${DOMINIO}
+      FRONTEND_URL: https://${DOMINIO}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Un solo worker a propósito: el scheduler (recordatorios, lista de espera),
+    # el rate limit y los WebSockets viven en memoria del proceso.
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000
+             --proxy-headers --forwarded-allow-ips='*'"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        VITE_API_URL: https://${DOMINIO:?Falta DOMINIO en .env}
+    restart: unless-stopped
+    environment:
+      DOMINIO: ${DOMINIO}
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

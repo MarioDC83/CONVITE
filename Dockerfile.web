@@ -1,0 +1,19 @@
+# Imagen de producción del frontend: compila React/Vite y lo sirve con Caddy,
+# que además hace de proxy hacia el backend y gestiona el HTTPS (Let's Encrypt).
+# Contexto de build: la raíz del repo (ver docker-compose.prod.yml).
+
+FROM node:22-slim AS build
+WORKDIR /app
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ .
+# El frontend necesita saber la URL pública a la que hablar con la API y el
+# WebSocket; Vite la "hornea" en el build, por eso es un ARG y no una variable
+# de entorno en tiempo de ejecución.
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+RUN npm run build
+
+FROM caddy:2-alpine
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --from=build /app/dist /srv

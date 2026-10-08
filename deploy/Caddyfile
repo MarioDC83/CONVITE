@@ -1,0 +1,24 @@
+# {$DOMINIO} viene del .env (p.ej. convite.autocore.es). Caddy pide y renueva
+# solo el certificado HTTPS de ese dominio; hace falta que el DNS ya apunte al
+# servidor y que los puertos 80 y 443 estén abiertos.
+{$DOMINIO} {
+	encode gzip zstd
+
+	# API REST (incluye el callback y el webhook de Google Calendar)
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# WebSocket de reservas en vivo
+	handle /ws/* {
+		reverse_proxy backend:8000
+	}
+
+	# Todo lo demás: la app React (con fallback a index.html para las rutas
+	# del router) y public/widget.js
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

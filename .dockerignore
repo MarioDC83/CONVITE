@@ -1,0 +1,11 @@
+# Solo afecta a builds con contexto en la raíz (Dockerfile.web): evita enviar
+# al daemon dependencias, el backend y, sobre todo, secretos.
+.git
+.env
+.env.*
+!.env.example
+.claude
+backend
+**/node_modules
+**/__pycache__
+frontend/dist
