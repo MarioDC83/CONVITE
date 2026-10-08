@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --color-page: #121317;
+  --color-panel: #1a1b20;
+  --color-panel-alt: #212228;
+  --color-panel-raised: #26272e;
+  --color-border: #2c2d35;
+  --color-border-strong: #3c3d47;
+  --color-ink: #f2f2f4;
+  --color-ink-muted: #9a9ba5;
+  --color-ink-faint: #6b6c77;
+  --color-accent: #2986cc;
+  --color-accent-hover: #4a9bd8;
+  --color-accent-soft: #2986cc26;
+  --color-accent-ink: #ffffff;
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-md border border-border bg-panel-alt px-2.5 py-1.5 text-sm text-ink outline-none transition placeholder:text-ink-faint focus:border-accent focus:ring-1 focus:ring-accent;
+  }
+
+  .btn-primary {
+    @apply rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-ink shadow-sm transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .btn-secondary {
+    @apply rounded-md border border-border-strong px-4 py-2 text-sm font-medium text-ink transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .card {
+    @apply rounded-xl border border-border bg-panel shadow-lg shadow-black/20;
+  }
+}
+
+/* Fondo para las pantallas de "portada" (login, selector de restaurante).
+   La foto real va en public/fondo-restaurante.jpg (o cambia la ruta abajo); si no
+   existe, esa capa simplemente no pinta y quedan las otras tres (degradado oscuro
+   para legibilidad + resplandor azul + base) — nunca se rompe. */
+.hero-bg {
+  background-image:
+    linear-gradient(180deg, rgba(18, 19, 23, 0.55) 0%, rgba(18, 19, 23, 0.86) 70%, rgba(18, 19, 23, 0.97) 100%),
+    url("/fondo-restaurante.jpg"),
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(41, 134, 204, 0.35), transparent 60%),
+    linear-gradient(160deg, #122636 0%, #101820 45%, #121317 100%);
+  background-size: cover, cover, cover, cover;
+  background-position: center, center, center, center;
+  background-repeat: no-repeat;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--color-page);
+  color: var(--color-ink);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(41, 134, 204, 0.08), transparent),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.012) 0px,
+      rgba(255, 255, 255, 0.012) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  background-attachment: fixed;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-strong);
+  border-radius: 999px;
+}

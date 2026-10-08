@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Restaurante Ejemplo — página de un cliente (estilos a propósito distintos)</title>
+  <style>
+    /* Estilos deliberadamente "hostiles" y muy distintos a los del widget,
+       para comprobar que el Shadow DOM del widget no los hereda ni los filtra. */
+    body {
+      background: #3b0a0a;
+      color: #ffe08a;
+      font-family: "Comic Sans MS", cursive, sans-serif;
+      font-size: 22px;
+      margin: 0;
+      padding: 40px;
+    }
+    h1 { color: #ffe08a; text-shadow: 2px 2px #000; }
+    button, input, select {
+      background: black !important;
+      color: lime !important;
+      border: 4px dashed red !important;
+      font-size: 30px !important;
+    }
+    .contenedor {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .caja-widget {
+      margin-top: 30px;
+      background: #222;
+      padding: 20px;
+      border: 3px solid yellow;
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <h1>🍝 Restaurante Ejemplo — web del cliente</h1>
+    <p>Esta página simula la web de un restaurante con un diseño totalmente
+    distinto (colores, tipografía y estilos de "button/input" globales muy
+    agresivos a propósito) para comprobar que el widget de Convite, embebido
+    más abajo, mantiene su propio aspecto sin heredar nada de esto — y sin
+    filtrar sus propios estilos hacia el resto de la página.</p>
+
+    <div class="caja-widget">
+      <convite-reservas
+        restaurante-id="TU_RESTAURANTE_ID"
+        api-key="TU_API_KEY_AQUI"
+        api-base="http://localhost:8000/api/v1"
+      ></convite-reservas>
+    </div>
+  </div>
+
+  <script src="/widget.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+# --- Secretos y configuración local (NUNCA al repo) ---
+.env
+.env.*
+!.env.example
+# Ajustes locales de Claude Code: acumulan comandos con API keys de pruebas
+.claude/settings.local.json
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node / frontend ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# --- Volúmenes y datos locales (Postgres / Docker) ---
+pgdata/
+postgres_data/
+postgres-data/
+db_data/
+*.sqlite
+*.sqlite3
+*.dump
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Editor / sistema ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
