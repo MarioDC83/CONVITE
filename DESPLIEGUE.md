@@ -23,20 +23,33 @@ Recomendado: **DigitalOcean Droplet**, Ubuntu 24.04, 2 GB RAM / 1 vCPU
 ```bash
 git clone https://github.com/MarioDC83/CONVITE.git
 cd CONVITE
-cp .env.example .env
-nano .env
 ```
 
 Si el repo es privado, `git clone` pedirá usuario y un *token* de GitHub
 (Settings → Developer settings → Fine-grained token, solo lectura sobre CONVITE).
 
-En `.env` hay que poner **valores nuevos** (no los del PC):
+Crear el `.env` con secretos **nuevos** (no los del PC), generados en el propio
+servidor para no tener que copiarlos ni teclearlos:
 
-- `DOMINIO` → p. ej. `convite.autocore.es` (sin `https://`)
-- `POSTGRES_PASSWORD` → `openssl rand -base64 24`
-- `SECRET_KEY` → `openssl rand -base64 48`  (firma los JWT y cifra los tokens de Google)
-- `POSTGRES_USER` / `POSTGRES_DB` → pueden quedarse como están
-- `GOOGLE_CLIENT_ID/SECRET` → vacíos por ahora (ver sección 5)
+```bash
+cat > .env <<EOF
+DOMINIO=convite.autocore.es
+POSTGRES_USER=convite
+POSTGRES_PASSWORD=$(openssl rand -hex 24)
+POSTGRES_DB=convite
+SECRET_KEY=$(openssl rand -hex 48)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+EOF
+chmod 600 .env
+```
+
+- `DOMINIO`: sin `https://`. Cambia `convite.autocore.es` por el tuyo.
+- Usa `-hex` (no `-base64`) para la contraseña de Postgres: base64 puede
+  producir `/`, `+` o `=`, que rompen la URL de conexión a la base de datos.
+- `SECRET_KEY` firma los JWT y cifra los tokens de Google: no la pierdas ni
+  la cambies después, o se invalidan las sesiones y las conexiones a Google.
+- `GOOGLE_CLIENT_ID/SECRET` vacíos por ahora (ver sección 5).
 
 ## 3. Arrancar
 
