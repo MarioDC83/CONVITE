@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { actualizarMesa, crearMesa, eliminarMesa } from "../api/mesas"
 import { guardarPlano, obtenerPlano } from "../api/plano"
 import { actualizarZona, crearZona, eliminarZona } from "../api/zonas"
-import CanvasStage from "../components/editor/CanvasStage"
+import CanvasStage, { type CanvasStageHandle } from "../components/editor/CanvasStage"
 import MesaEditPanel from "../components/editor/MesaEditPanel"
 import ShapePalette from "../components/editor/ShapePalette"
 import Toolbar from "../components/editor/Toolbar"
@@ -32,6 +32,10 @@ export default function PlanoEditor() {
   const [mesas, setMesas] = useState<Mesa[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const canvasRef = useRef<CanvasStageHandle>(null)
+  // Solo móvil: barra de mesas y zonas como hoja inferior.
+  const [herramientasAbiertas, setHerramientasAbiertas] = useState(false)
 
   const [selectedMesaId, setSelectedMesaId] = useState<string | null>(null)
   const [activeZonaId, setActiveZonaId] = useState<string | null>(null)
@@ -64,6 +68,8 @@ export default function PlanoEditor() {
     // aparece; un useEffect(() => {...}, []) con useRef se quedaría enganchado
     // a un elemento nulo para siempre si el ref se adjunta después del mount.
     if (!canvasWrapperEl) return
+    // Medida inmediata, sin esperar al primer aviso del observer.
+    setCanvasSize({ width: canvasWrapperEl.clientWidth, height: canvasWrapperEl.clientHeight })
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       if (entry) {
@@ -92,6 +98,11 @@ export default function PlanoEditor() {
       setSelectedMesaId(null)
     }
   }, [filtroZonaId, selectedMesa])
+
+  useEffect(() => {
+    // Al seleccionar una mesa se abre su panel de edición: no apilar dos hojas.
+    if (selectedMesaId) setHerramientasAbiertas(false)
+  }, [selectedMesaId])
 
   const handleChangeMesaGeometry = useCallback(
     (id: string, attrs: { pos_x: number; pos_y: number; ancho: number; alto: number; rotacion: number }) => {
@@ -122,6 +133,15 @@ export default function PlanoEditor() {
     } catch {
       setError("No se pudo crear la mesa.")
     }
+  }
+
+  // Añadir con un toque/clic (en móvil no se puede arrastrar desde la paleta):
+  // la mesa aparece en el centro de lo que se ve, algo desplazada si ya hay otras.
+  function handleAddForma(forma: FormaMesa) {
+    const centro = canvasRef.current?.centroVisible() ?? { x: 200, y: 200 }
+    const desfase = (mesas.length % 5) * 24
+    void handleDropForma(forma, { x: centro.x + desfase, y: centro.y + desfase })
+    setHerramientasAbiertas(false)
   }
 
   async function handleUpdateMesa(id: string, attrs: Partial<Mesa>) {
@@ -255,8 +275,21 @@ export default function PlanoEditor() {
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-64 shrink-0 overflow-y-auto border-r border-border bg-panel p-4">
-          <ShapePalette disabled={!activeZonaId} />
+        {/* Escritorio: barra lateral fija. Móvil: hoja inferior que se abre con el botón "Mesas y zonas". */}
+        <aside
+          className={`${herramientasAbiertas ? "block" : "hidden"} fixed inset-x-0 bottom-0 z-40 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-border bg-panel p-4 shadow-2xl shadow-black/50 md:static md:inset-auto md:z-auto md:block md:max-h-none md:w-64 md:shrink-0 md:rounded-none md:border-r md:border-t-0 md:shadow-none`}
+        >
+          <div className="mb-3 flex items-center justify-between md:hidden">
+            <span className="text-sm font-semibold text-ink">Mesas y zonas</span>
+            <button
+              onClick={() => setHerramientasAbiertas(false)}
+              className="rounded-md p-1.5 text-ink-muted hover:bg-panel-alt hover:text-ink"
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
+          </div>
+          <ShapePalette disabled={!activeZonaId} onAdd={handleAddForma} />
           <div className="my-5 border-t border-border" />
           <ZonePanel
             zonas={zonas}
@@ -271,6 +304,7 @@ export default function PlanoEditor() {
 
         <main ref={setCanvasWrapperEl} className="relative flex-1 overflow-hidden">
           <CanvasStage
+            ref={canvasRef}
             mesas={mesasVisibles}
             zonas={zonas}
             selectedMesaId={selectedMesaId}
@@ -279,11 +313,18 @@ export default function PlanoEditor() {
             onDropForma={handleDropForma}
             width={canvasSize.width}
             height={canvasSize.height}
+            claveVista={filtroZonaId ?? "todas"}
           />
+          <button
+            onClick={() => setHerramientasAbiertas(true)}
+            className="btn-primary absolute bottom-3 left-3 z-10 rounded-full px-4 py-2.5 shadow-lg md:hidden"
+          >
+            ＋ Mesas y zonas
+          </button>
         </main>
 
         {selectedMesa && (
-          <aside className="w-72 shrink-0 border-l border-border bg-panel">
+          <aside className="fixed inset-x-0 bottom-0 z-40 max-h-[70vh] overflow-y-auto rounded-t-2xl border-t border-border bg-panel shadow-2xl shadow-black/50 md:static md:inset-auto md:z-auto md:max-h-none md:w-72 md:shrink-0 md:overflow-visible md:rounded-none md:border-l md:border-t-0 md:shadow-none">
             <MesaEditPanel
               mesa={selectedMesa}
               zonas={zonas}
