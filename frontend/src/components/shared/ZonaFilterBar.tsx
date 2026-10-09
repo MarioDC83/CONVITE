@@ -11,8 +11,10 @@ interface ZonaFilterBarProps {
 export default function ZonaFilterBar({ zonas, filtroZonaId, onChange, mesas }: ZonaFilterBarProps) {
   const contarPorZona = (zonaId: string) => mesas?.filter((m) => m.zona_id === zonaId).length ?? null
 
+  // Una sola fila que se desliza con el dedo cuando las zonas no caben (móvil),
+  // en vez de apilarse en varias líneas y robar altura al plano.
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-border bg-panel px-5">
+    <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap border-b border-border bg-panel px-3 sm:px-5">
       <Tab activo={filtroZonaId === null} onClick={() => onChange(null)}>
         Todas las zonas
       </Tab>
@@ -45,7 +47,7 @@ function Tab({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
+      className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
         activo
           ? "border-accent text-accent"
           : "border-transparent text-ink-muted hover:text-ink"

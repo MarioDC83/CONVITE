@@ -34,6 +34,22 @@ export default function ReservasDelDia() {
   const { usuario } = useAuth()
   const esAdmin = usuario?.rol === "admin" || usuario?.rol === "superadmin"
   const esSuperadmin = usuario?.rol === "superadmin"
+  const [menuAbierto, setMenuAbierto] = useState(false)
+
+  // Una sola lista para el menú en línea (pantalla ancha) y el desplegable (móvil).
+  const enlacesMenu = [
+    ...(esSuperadmin ? [{ ruta: "plano", texto: "Editor de plano" }] : []),
+    { ruta: "camarero", texto: "Vista camarero" },
+    { ruta: "clientes", texto: "Clientes" },
+    ...(esAdmin
+      ? [
+          { ruta: "estadisticas", texto: "Estadísticas" },
+          { ruta: "dias-especiales", texto: "Días especiales" },
+          { ruta: "usuarios", texto: "Usuarios" },
+          { ruta: "integraciones", texto: "Integraciones" },
+        ]
+      : []),
+  ]
 
   const [restaurante, setRestaurante] = useState<Restaurante | null>(null)
   const [zonas, setZonas] = useState<Zona[]>([])
@@ -82,6 +98,10 @@ export default function ReservasDelDia() {
     // canvasWrapperEl solo existe una vez montado el <main> real (no durante la
     // carga inicial), así que este efecto debe re-ejecutarse cuando aparece.
     if (!canvasWrapperEl) return
+    // Medida inmediata: no depende de que el navegador llegue a pintar un
+    // fotograma (el observer solo avisa en el siguiente) y evita que el plano
+    // arranque con el tamaño por defecto de 800x600 en una pantalla estrecha.
+    setCanvasSize({ width: canvasWrapperEl.clientWidth, height: canvasWrapperEl.clientHeight })
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       if (entry) setCanvasSize({ width: entry.contentRect.width, height: entry.contentRect.height })
@@ -222,78 +242,66 @@ export default function ReservasDelDia() {
 
   return (
     <div className="flex h-screen flex-col">
-      <header className="flex items-center justify-between border-b border-border bg-panel px-5 py-3">
-        <div className="flex items-center gap-3">
+      <header className="relative flex items-center justify-between gap-3 border-b border-border bg-panel px-3 py-3 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             onClick={() => navigate("/")}
-            className="rounded-md p-1.5 text-ink-muted transition hover:bg-panel-alt hover:text-ink"
+            className="shrink-0 rounded-md p-1.5 text-ink-muted transition hover:bg-panel-alt hover:text-ink"
             title="Volver a restaurantes"
           >
             ←
           </button>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-accent">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold uppercase tracking-wide text-accent">
               Reservas del día
             </p>
-            <h1 className="text-sm font-semibold text-ink">{restaurante.nombre}</h1>
+            <h1 className="truncate text-sm font-semibold text-ink">{restaurante.nombre}</h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-5">
-          {esSuperadmin && (
-            <button
-              onClick={() => navigate(`/restaurantes/${restauranteId}/plano`)}
-              className="text-sm font-medium text-ink-muted transition hover:text-accent"
-            >
-              Editor de plano
-            </button>
-          )}
+        <div className="flex shrink-0 items-center gap-3 sm:gap-5">
+          {/* Pantalla ancha: menús en línea. Estrecha: botón "Menú" (abajo). */}
+          <nav className="hidden items-center gap-5 xl:flex">
+            {enlacesMenu.map((e) => (
+              <button
+                key={e.ruta}
+                onClick={() => navigate(`/restaurantes/${restauranteId}/${e.ruta}`)}
+                className="text-sm font-medium text-ink-muted transition hover:text-accent"
+              >
+                {e.texto}
+              </button>
+            ))}
+          </nav>
           <button
-            onClick={() => navigate(`/restaurantes/${restauranteId}/camarero`)}
-            className="text-sm font-medium text-ink-muted transition hover:text-accent"
+            onClick={() => setMenuAbierto((v) => !v)}
+            className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-medium text-ink transition hover:border-accent hover:text-accent xl:hidden"
+            aria-expanded={menuAbierto}
           >
-            Vista camarero
+            ☰ Menú
           </button>
-          <button
-            onClick={() => navigate(`/restaurantes/${restauranteId}/clientes`)}
-            className="text-sm font-medium text-ink-muted transition hover:text-accent"
+          <span
+            className="flex items-center gap-1.5 text-xs text-ink-faint"
+            title={conectado ? "En vivo" : "Reconectando..."}
           >
-            Clientes
-          </button>
-          {esAdmin && (
-            <>
-              <button
-                onClick={() => navigate(`/restaurantes/${restauranteId}/estadisticas`)}
-                className="text-sm font-medium text-ink-muted transition hover:text-accent"
-              >
-                Estadísticas
-              </button>
-              <button
-                onClick={() => navigate(`/restaurantes/${restauranteId}/dias-especiales`)}
-                className="text-sm font-medium text-ink-muted transition hover:text-accent"
-              >
-                Días especiales
-              </button>
-              <button
-                onClick={() => navigate(`/restaurantes/${restauranteId}/usuarios`)}
-                className="text-sm font-medium text-ink-muted transition hover:text-accent"
-              >
-                Usuarios
-              </button>
-              <button
-                onClick={() => navigate(`/restaurantes/${restauranteId}/integraciones`)}
-                className="text-sm font-medium text-ink-muted transition hover:text-accent"
-              >
-                Integraciones
-              </button>
-            </>
-          )}
-          <span className="flex items-center gap-1.5 text-xs text-ink-faint">
             <span className={`h-2 w-2 rounded-full ${conectado ? "bg-emerald-500" : "bg-ink-faint"}`} />
-            {conectado ? "En vivo" : "Reconectando..."}
+            <span className="hidden sm:inline">{conectado ? "En vivo" : "Reconectando..."}</span>
           </span>
           <UserMenu />
         </div>
+
+        {menuAbierto && (
+          <nav className="absolute inset-x-0 top-full z-30 border-b border-border bg-panel shadow-xl shadow-black/40 xl:hidden">
+            {enlacesMenu.map((e) => (
+              <button
+                key={e.ruta}
+                onClick={() => navigate(`/restaurantes/${restauranteId}/${e.ruta}`)}
+                className="block w-full border-b border-border/60 px-5 py-3.5 text-left text-sm font-medium text-ink transition last:border-b-0 hover:bg-panel-alt hover:text-accent"
+              >
+                {e.texto}
+              </button>
+            ))}
+          </nav>
+        )}
       </header>
 
       <TurnoDatePicker
@@ -307,7 +315,7 @@ export default function ReservasDelDia() {
         puedeGestionar={esAdmin}
       />
 
-      <div className="flex items-center gap-1 border-b border-border bg-panel px-5 py-2">
+      <div className="flex flex-wrap items-center gap-1 border-b border-border bg-panel px-3 py-2 sm:px-5">
         {(["plano", "lista", "espera"] as const).map((v) => (
           <button
             key={v}
@@ -319,7 +327,7 @@ export default function ReservasDelDia() {
             {v === "plano" ? "Plano" : v === "lista" ? "Lista" : "Espera"}
           </button>
         ))}
-        <div className="ml-4 flex items-center gap-3 text-xs text-ink-muted">
+        <div className="flex w-full items-center gap-3 pt-1 text-xs text-ink-muted sm:ml-4 sm:w-auto sm:pt-0">
           <span className="flex items-center gap-1">
             <span className="h-2 w-2 rounded-full bg-emerald-500" /> Libre
           </span>
@@ -372,7 +380,9 @@ export default function ReservasDelDia() {
         </main>
 
         {modo && (
-          <aside className="w-80 shrink-0 border-l border-border bg-panel">
+          // Escritorio: panel lateral de 320 px. Móvil: hoja que sube desde
+          // abajo (si no, 320 px de panel dejan el plano en una rendija).
+          <aside className="fixed inset-x-0 bottom-0 z-40 max-h-[80vh] overflow-y-auto rounded-t-2xl border-t border-border bg-panel shadow-2xl shadow-black/50 md:static md:inset-auto md:z-auto md:max-h-none md:w-80 md:shrink-0 md:overflow-visible md:rounded-none md:border-l md:border-t-0 md:shadow-none">
             {modo.tipo === "crear" && (
               <ReservaFormCreate
                 mesa={modo.mesa}

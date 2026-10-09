@@ -193,7 +193,7 @@ export default function ClientesAdmin() {
         </main>
 
         {seleccionado && (
-          <aside className="w-96 shrink-0 overflow-y-auto border-l border-border bg-panel p-5">
+          <aside className="fixed inset-0 z-40 overflow-y-auto bg-panel p-5 md:static md:inset-auto md:z-auto md:w-96 md:shrink-0 md:border-l md:border-border">
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-ink">{seleccionado.nombre}</h2>

@@ -75,7 +75,7 @@ export default function TurnoDatePicker({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-4 border-b border-border bg-panel px-5 py-3">
+    <div className="flex flex-wrap items-end gap-3 border-b border-border bg-panel px-3 py-3 sm:gap-4 sm:px-5">
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-ink-muted">Fecha</label>
         <input
